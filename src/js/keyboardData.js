@@ -32,6 +32,7 @@ export default [
     {
       value: { ru: '\\', en: '\\' }, shift: { ru: '/', en: '|' }, code: 'Backslash', classes: ['key_backslash', 'key_medium'],
     },
+    { value: 'Del', code: 'Delete', class: 'key_del' },
   ],
   [
     { value: 'Caps Lock', code: 'CapsLock', classes: ['key_capslock', 'key_large'] },

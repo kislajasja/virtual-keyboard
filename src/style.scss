@@ -51,7 +51,8 @@
   background-color: #000000;
   border: 3px solid #a9b0b4;
   color: #ffffff;
-  box-shadow: 2px 2px 2px #a9b0b4;
+  box-shadow: 2px 2px 2px rgb(169 176 180 / 75%);
+  transition: all .3s;
 
   &_medium {
     width: 85px;
@@ -71,14 +72,13 @@
 
   &:hover:not(:active) {
     border-color: #01bdf5;
-    box-shadow: 2px 4px 4px #01bdf5;
+    box-shadow: 2px 2px 2px rgb(1 189 245 / 75%);
   }
 
   &_active {
     border-color: #ff6700;
     color: #ff6700;
-    box-shadow: 2px 4px 4px #ff6700;
-
+    box-shadow: none;
   }
 
   &:focus {
