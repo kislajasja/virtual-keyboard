@@ -11,9 +11,6 @@
         "sourceType": "module"
     },
     "rules": {
-        "import/extensions": "off",
-        "no-case-declarations": "off",
-        "no-param-reassign": "off",
-        "no-plusplus": "off"
+        "import/extensions": "off"
     }
 }

@@ -7,14 +7,6 @@ const alphabetCharCodes = [
   { min: 65, max: 90 }, // en upperCase
 ];
 
-/**
- *      TO-DO list
- *
- * 2. Add animations
- * 3. Move create keyboard dom to separate file
- * 11. Write to console what is done
- */
-
 const createDom = () => {
   const mainContainer = document.createElement('div');
   const textarea = document.createElement('textarea');
@@ -72,6 +64,7 @@ const createDom = () => {
     cursorEnd = textarea.selectionEnd;
   });
 
+  const keys = [...keyboard.querySelectorAll('button')];
   const shiftChangedKeys = [...keyboard.querySelectorAll(`[data-${lang}-shift]`)];
   const shiftKeys = [...keyboard.querySelectorAll('[data-code^="Shift"]')];
   const getCapsLockKeys = () => shiftChangedKeys
@@ -85,63 +78,95 @@ const createDom = () => {
     const langKey = keyboard.querySelector("[data-code='Lang']");
     const langKeys = keyboardData.flat()
       .filter(({ value }) => value.en);
-    const keys = langKeys.map(({ code }) => keyboard.querySelector(`[data-code=${code}]`));
+    const allKeys = langKeys.map(({ code }) => keyboard.querySelector(`[data-code=${code}]`));
 
     lang = lang === 'en' ? 'ru' : 'en';
     localStorage.setItem('lang', lang);
     langKey.innerHTML = lang.toUpperCase();
 
-    keys.forEach((key) => {
+    allKeys.forEach((key) => {
+      const element = key;
+
       if (isCapsLockSelected) {
         const letterCharCode = key.dataset[lang].charCodeAt(0);
         const isCapsLockLetter = alphabetCharCodes
           .some(({ min, max }) => key.dataset.code !== 'Lang' && letterCharCode >= min && letterCharCode <= max);
 
-        key.innerHTML = key.dataset[isCapsLockLetter ? `${lang}Shift` : lang];
+        element.innerHTML = key.dataset[isCapsLockLetter ? `${lang}Shift` : lang];
       } else {
-        key.innerHTML = key.dataset[lang];
+        element.innerHTML = key.dataset[lang];
       }
     });
   };
 
-  document.addEventListener('keydown', ({ code, ctrlKey, shiftKey }) => {
-    const key = document.querySelector(`[data-code=${code}]`);
+  document.addEventListener('keydown', (event) => {
+    const { code, ctrlKey, shiftKey } = event;
+
     textarea.focus();
+    if (!code) {
+      return;
+    }
+    const key = document.querySelector(`[data-code=${code}]`);
+    const capsLockKeys = getCapsLockKeys();
 
     key?.classList.add('key_active');
     switch (code) {
       case 'ShiftLeft':
       case 'ShiftRight':
-        const shiftCapsLockKeys = getCapsLockKeys();
+        event.preventDefault();
 
         shiftChangedKeys.forEach((item) => {
-          if (isCapsLockSelected && shiftCapsLockKeys.includes(item)) {
-            item.innerHTML = item.dataset[lang];
+          const element = item;
+
+          if (isCapsLockSelected && capsLockKeys.includes(item)) {
+            element.innerHTML = item.dataset[lang];
           } else {
-            item.innerHTML = item.dataset[`${lang}Shift`];
+            element.innerHTML = item.dataset[`${lang}Shift`];
           }
         });
+        isShiftSelected = true;
         break;
-
+      case 'AltLeft':
+      case 'AltRight':
+      case 'ControlLeft':
+      case 'ControlRight':
+        break;
       case 'Tab':
-        textarea.value += '    ';
+        textarea.setRangeText('    ', cursorStart, cursorEnd, 'end');
         break;
 
       case 'CapsLock':
         if (isCapsLockKeyUp) {
-          const capsLockKeys = getCapsLockKeys();
           isCapsLockKeyUp = false;
 
           capsLockKeys.forEach((item) => {
-            item.innerHTML = item.dataset[isCapsLockSelected ? lang : `${lang}Shift`];
+            const element = item;
+
+            element.innerHTML = item.dataset[isCapsLockSelected ? lang : `${lang}Shift`];
           });
 
           key.classList.toggle('key_capsLock-active');
           isCapsLockSelected = !isCapsLockSelected;
         }
         break;
-
+      case 'Backspace':
+      case 'Space':
+      case 'Enter':
+      case 'Delete':
+      case 'ArrowUp':
+      case 'ArrowDown':
+      case 'ArrowLeft':
+      case 'ArrowRight':
+        break;
       default:
+        event.preventDefault();
+        if (isCapsLockSelected && capsLockKeys.includes(key)) {
+          textarea.setRangeText(key.dataset[isShiftSelected ? lang : `${lang}Shift`], cursorStart, cursorEnd, 'end');
+        } else {
+          textarea.setRangeText(key.dataset[isShiftSelected ? `${lang}Shift` : lang], cursorStart, cursorEnd, 'end');
+        }
+        cursorStart += 1;
+        cursorEnd = cursorStart;
     }
 
     if (shiftKey && ctrlKey) {
@@ -150,7 +175,11 @@ const createDom = () => {
   });
 
   document.addEventListener('keyup', ({ code }) => {
+    if (!code) {
+      return;
+    }
     const key = document.querySelector(`[data-code=${code}]`);
+    const capsLockKeys = getCapsLockKeys();
 
     textarea.focus();
 
@@ -158,13 +187,13 @@ const createDom = () => {
     switch (code) {
       case 'ShiftLeft':
       case 'ShiftRight':
-        const capsLockKeys = getCapsLockKeys();
-
         shiftChangedKeys.forEach((item) => {
+          const element = item;
+
           if (isCapsLockSelected && capsLockKeys.includes(item)) {
-            item.innerHTML = item.dataset[`${lang}Shift`];
+            element.innerHTML = item.dataset[`${lang}Shift`];
           } else {
-            item.innerHTML = item.dataset[lang];
+            element.innerHTML = item.dataset[lang];
           }
         });
         break;
@@ -182,6 +211,8 @@ const createDom = () => {
     const {
       tagName, classList, dataset, childNodes,
     } = target;
+    const capsLockKeys = getCapsLockKeys();
+
     textarea.focus();
 
     if (tagName === 'BUTTON') {
@@ -210,7 +241,7 @@ const createDom = () => {
           break;
         case 'Delete':
           if (cursorStart === cursorEnd) {
-            cursorEnd++;
+            cursorEnd += 1;
           }
           break;
         case 'AltLeft':
@@ -225,34 +256,35 @@ const createDom = () => {
           textarea.value += oldValue.slice(cursorEnd);
 
           if (cursorStart && cursorStart === cursorEnd) {
-            cursorStart--;
+            cursorStart += -1;
             cursorEnd = cursorStart;
           }
           break;
         case 'ArrowDown':
-          textarea.value += '🠗';
+          textarea.value += '▼';
           break;
         case 'ArrowUp':
-          textarea.value += '🠕';
+          textarea.value += '▲';
           break;
         case 'ArrowRight':
           textarea.value += oldValue.slice(cursorEnd);
 
           if (cursorStart && cursorStart === cursorEnd) {
-            cursorStart++;
+            cursorStart += 1;
             cursorEnd = cursorStart;
           }
           break;
         case 'ShiftLeft':
         case 'ShiftRight':
-          const capsLockShiftKeys = getCapsLockKeys();
           isShiftSelected = !isShiftSelected;
 
           shiftChangedKeys.forEach((item) => {
-            if (isCapsLockSelected && capsLockShiftKeys.includes(item)) {
-              item.innerHTML = item.dataset[isShiftSelected ? lang : `${lang}Shift`];
+            const element = item;
+
+            if (isCapsLockSelected && capsLockKeys.includes(item)) {
+              element.innerHTML = item.dataset[isShiftSelected ? lang : `${lang}Shift`];
             } else {
-              item.innerHTML = item.dataset[isShiftSelected ? `${lang}Shift` : lang];
+              element.innerHTML = item.dataset[isShiftSelected ? `${lang}Shift` : lang];
             }
           });
 
@@ -269,14 +301,15 @@ const createDom = () => {
           isShiftSelected = false;
 
           if (isCapsLockKeyUp) {
-            const capsLockKeys = getCapsLockKeys();
             isCapsLockKeyUp = false;
 
             shiftChangedKeys.forEach((item) => {
+              const element = item;
+
               if (isCapsLockSelected && capsLockKeys.includes(item)) {
-                item.innerHTML = item.dataset[`${lang}Shift`];
+                element.innerHTML = item.dataset[`${lang}Shift`];
               } else {
-                item.innerHTML = item.dataset[lang];
+                element.innerHTML = item.dataset[lang];
               }
             });
           }
@@ -290,9 +323,6 @@ const createDom = () => {
         cursorStart = textarea.value.length - (oldValue.length - cursorEnd);
         cursorEnd = cursorStart;
       }
-    } else {
-      cursorStart = textarea.value.length;
-      cursorEnd = cursorStart;
     }
   });
 
@@ -300,6 +330,7 @@ const createDom = () => {
     textarea.focus();
 
     if (tagName === 'BUTTON') {
+      const capsLockKeys = getCapsLockKeys();
       textarea.setSelectionRange(cursorEnd, cursorEnd);
 
       switch (dataset.code) {
@@ -311,14 +342,15 @@ const createDom = () => {
           classList.remove('key_active');
           break;
         default:
-          const capsLockKeys = getCapsLockKeys();
-          classList.remove('key_active');
+          keys.forEach((key) => key.classList.remove('key_active'));
 
           shiftChangedKeys.forEach((item) => {
+            const element = item;
+
             if (isCapsLockSelected && capsLockKeys.includes(item)) {
-              item.innerHTML = item.dataset[`${lang}Shift`];
+              element.innerHTML = item.dataset[`${lang}Shift`];
             } else {
-              item.innerHTML = item.dataset[lang];
+              element.innerHTML = item.dataset[lang];
             }
           });
           isShiftSelected = false;
