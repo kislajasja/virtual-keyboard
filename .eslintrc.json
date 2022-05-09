@@ -12,7 +12,6 @@
     },
     "rules": {
         "import/extensions": "off",
-        "no-unused-vars": "warn",
         "no-case-declarations": "off",
         "no-param-reassign": "off",
         "no-plusplus": "off"

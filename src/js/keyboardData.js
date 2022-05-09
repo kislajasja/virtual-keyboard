@@ -35,7 +35,7 @@ export default [
     { value: 'Del', code: 'Delete', class: 'key_del' },
   ],
   [
-    { value: 'Caps Lock', code: 'CapsLock', classes: ['key_capslock', 'key_large'] },
+    { value: 'Caps Lock', code: 'CapsLock', classes: ['key_capsLock', 'key_large'] },
     { value: { ru: 'ф', en: 'a' }, shift: { ru: 'Ф', en: 'A' }, code: 'KeyA' },
     { value: { ru: 'ы', en: 's' }, shift: { ru: 'Ы', en: 'S' }, code: 'KeyS' },
     { value: { ru: 'в', en: 'd' }, shift: { ru: 'В', en: 'D' }, code: 'KeyD' },
