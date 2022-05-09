@@ -196,6 +196,8 @@ const createDom = () => {
             element.innerHTML = item.dataset[lang];
           }
         });
+
+        isShiftSelected = false;
         break;
       case 'CapsLock':
         isCapsLockKeyUp = true;
